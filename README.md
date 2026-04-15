@@ -1,4 +1,4 @@
-# Previllage-Escalation# Privilege Escalation Notes — Complete Study Guide
+# Privilege Escalation Notes — Complete Study Guide
 
 > **Purpose:** Self-contained privilege escalation notes for NSDA exam, internship, and OSCP preparation.
 > No external resources needed. Every concept, command, and technique is explained here.
@@ -21,7 +21,7 @@ You almost never land directly as root. Priv esc is what happens **after** you g
 ## 📁 File Structure
 
 ```
-privellage-escalation/
+privesc-notes/
 │
 ├── README.md                          ← You are here (Start here)
 │
@@ -42,23 +42,23 @@ privellage-escalation/
 
 ## 🐧 Linux Privilege Escalation
 
-| # | Topic | Difficulty | Importance |
-|---|-------|------------|-----------------|
-| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | Easy | 🔴 Must Know |
-| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | Easy | 🔴 Must Know |
-| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) | Medium | 🔴 Must Know |
-| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) | Medium | 🔴 Must Know |
-| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) | Easy | 🔴 Must Know |
+| # | Topic | Difficulty |
+|---|-------|------------|
+| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | Easy |
+| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | Easy |
+| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) | Medium |
+| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) | Medium |
+| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) | Easy |
 
 ---
 
 ## 🪟 Windows Privilege Escalation
 
-| # | Topic | Difficulty | Importance |
-|---|-------|------------|-----------------|
-| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | Medium | 🔴 Must Know |
-| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | Medium | 🔴 Must Know |
-| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) | Easy | 🟡 Important |
+| # | Topic | Difficulty |
+|---|-------|------------|
+| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | Medium |
+| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | Medium |
+| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) | Easy |
 
 ---
 
@@ -119,12 +119,105 @@ chmod +x linpeas.sh
 
 ```
 Start Here:
-01 SUID Abuse         → Easiest, most common in CTF/exam
-02 Sudo Misconfig     → Very common in real world
-03 Cron Job Abuse     → Medium, very satisfying to exploit
-04 Weak Permissions   → Simple concept, quick win
-05 Kernel Exploit     → You already saw this with udev
-06 Token Impersonation (Windows) → Most important Windows technique
+01 SUID Abuse                          → Easiest, most common
+02 Sudo Misconfig                      → Very common in real world
+03 Cron Job Abuse                      → Medium difficulty
+04 Weak Permissions                    → Simple concept, quick win
+05 Kernel Exploit                      → You already saw this with udev
+06 Token Impersonation (Windows)       → Most important Windows technique
 07 Unquoted Service Path (Windows)
 08 AlwaysInstallElevated (Windows)
 ```
+
+---
+
+## 🗺️ What to Learn Next
+
+After completing these notes, the natural next steps are:
+
+### 1. Active Directory (AD) Attacks
+Real corporate networks run on Active Directory. This is where network pentesting gets serious.
+
+| Topic | What it covers |
+|-------|---------------|
+| Kerberoasting | Steal and crack service account password hashes from Active Directory |
+| AS-REP Roasting | Attack accounts that don't require Kerberos pre-authentication |
+| Pass-the-Hash | Use NTLM hash directly to authenticate — no password cracking needed |
+| Pass-the-Ticket | Steal Kerberos tickets and reuse them for authentication |
+| BloodHound | Map AD permissions visually to find attack paths to Domain Admin |
+| DCSync | Impersonate a Domain Controller and dump all password hashes |
+
+**Tools:** BloodHound, Impacket suite, CrackMapExec, Rubeus, Mimikatz
+
+---
+
+### 2. Post-Exploitation
+After getting root/SYSTEM, a real pentester does more than just stop there.
+
+| Topic | What it covers |
+|-------|---------------|
+| Credential Dumping | Extract passwords and hashes from memory (Mimikatz, secretsdump) |
+| Lateral Movement | Use access on one machine to move to other machines on the network |
+| Pivoting | Route traffic through a compromised machine to reach internal networks |
+| Persistence | Maintain access even after reboot (backdoors, scheduled tasks) |
+| Covering Tracks | Clear logs to avoid detection |
+
+**Tools:** Mimikatz, Metasploit (post modules), Chisel (pivoting), proxychains
+
+---
+
+### 3. Advanced Linux Privilege Escalation
+These techniques go beyond the basics covered in this guide.
+
+| Topic | What it covers |
+|-------|---------------|
+| LD_PRELOAD Abuse | Inject malicious shared library via sudo environment variable |
+| NFS No_root_squash | Mount NFS share and plant SUID binary as root from attacker machine |
+| PATH Hijacking | Place malicious binary earlier in PATH than the real one |
+| Docker Group Abuse | Use Docker socket to mount host filesystem and escape to root |
+| Capabilities Abuse | Binaries with Linux capabilities (like cap_setuid) can be abused like SUID |
+
+---
+
+### 4. Advanced Windows Privilege Escalation
+Deeper Windows techniques for OSCP and professional engagements.
+
+| Topic | What it covers |
+|-------|---------------|
+| DLL Hijacking | Place malicious DLL where a privileged program looks for it |
+| Weak Service Permissions | Directly modify a service binary path to point to your payload |
+| Stored Credentials | Find plaintext passwords in registry, config files, command history |
+| SeDebugPrivilege | Inject into privileged processes if you have debug privilege |
+
+---
+
+### 5. Web Application Privilege Escalation
+Since your primary goal is web app pentesting, these connect directly:
+
+| Topic | What it covers |
+|-------|---------------|
+| RCE to Shell | Turning Remote Code Execution into a proper reverse shell |
+| Container Escapes | Breaking out of Docker containers to reach the host |
+| SSRF to Internal Access | Using Server-Side Request Forgery to access internal services |
+| File Upload to Shell | Uploading webshells and stabilizing the shell |
+
+---
+
+### Suggested Learning Path After This
+
+```
+Current (these notes)
+        ↓
+Post-Exploitation basics (credential dumping, lateral movement)
+        ↓
+Active Directory attacks (Kerberoasting, BloodHound, Pass-the-Hash)
+        ↓
+Advanced Linux priv esc (LD_PRELOAD, Docker, Capabilities)
+        ↓
+OSCP preparation (TryHackMe Pro labs / HackTheBox)
+```
+
+**Best Practice Platforms:**
+- TryHackMe — structured learning rooms for each topic above
+- HackTheBox — more realistic machines, good for OSCP prep
+- PortSwigger Web Academy — already using this for web app sec
