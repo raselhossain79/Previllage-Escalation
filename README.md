@@ -42,7 +42,7 @@ privellage-escalation/
 
 ## 🐧 Linux Privilege Escalation
 
-| # | Topic | Difficulty | Exam Importance |
+| # | Topic | Difficulty | Importance |
 |---|-------|------------|-----------------|
 | 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | Easy | 🔴 Must Know |
 | 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | Easy | 🔴 Must Know |
@@ -54,7 +54,7 @@ privellage-escalation/
 
 ## 🪟 Windows Privilege Escalation
 
-| # | Topic | Difficulty | Exam Importance |
+| # | Topic | Difficulty | Importance |
 |---|-------|------------|-----------------|
 | 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | Medium | 🔴 Must Know |
 | 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | Medium | 🔴 Must Know |
