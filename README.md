@@ -42,23 +42,31 @@ privesc-notes/
 
 ## 🐧 Linux Privilege Escalation
 
-| # | Topic | Difficulty |
-|---|-------|------------|
-| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | Easy |
-| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | Easy |
-| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) | Medium |
-| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) | Medium |
-| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) | Easy |
+| # | Topic | 
+|---|-------|
+| 00 | [Enumeration](linux-privesc/00-enumeration.md) | 
+| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | 
+| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | 
+| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) | 
+| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) | 
+| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) | 
+| 06 | [Path Hijacking](linux-privesc/06-path-hijacking.md) | 
+| 07 | [Capabilities](linux-privesc/07-capabilities.md) | 
+| 08 | [Environment Variables](linux-privesc/08-environment-variables.md) | 
+| 09 | [Credential Hunting](linux-privesc/09-credential-hunting.md) | 
+
+
+
 
 ---
 
 ## 🪟 Windows Privilege Escalation
 
-| # | Topic | Difficulty |
-|---|-------|------------|
-| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | Medium |
-| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | Medium |
-| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) | Easy |
+| # | Topic | 
+|---|-------|
+| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | 
+| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | 
+| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) | 
 
 ---
 
