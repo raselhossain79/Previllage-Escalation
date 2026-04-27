@@ -26,11 +26,16 @@ privesc-notes/
 ├── README.md                          ← You are here (Start here)
 │
 ├── linux-privesc/
+|   ├── 00-enumeration.md
 │   ├── 01-suid-abuse.md
 │   ├── 02-sudo-misconfiguration.md
 │   ├── 03-cron-job-abuse.md
 │   ├── 04-kernel-exploit.md
-│   └── 05-weak-file-permissions.md
+│   ├── 05-weak-file-permissions.md
+|   ├── 06-path-hijacking.md
+|   ├── 07-capabilities.md
+|   ├── 08-environment-variables.md
+|   └── 09-credential-hunting.md
 │
 └── windows-privesc/
     ├── 01-token-impersonation.md
