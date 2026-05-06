@@ -1,3 +1,14 @@
+//# Save the C code as copy-fail.c
+// gcc -o exploit copy-fail.c -lz
+//# Run it (requires root or appropriate capabilities)
+// sudo ./exploit 
+
+//# The -lz flag links libz for the zlib decompression. You may also need:
+
+//# Install zlib dev if not present
+// sudo apt-get install zlib1g-dev
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
