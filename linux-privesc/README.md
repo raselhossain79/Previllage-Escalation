@@ -7,13 +7,66 @@ A structured, mechanism-first reference for escalating privileges on Linux syste
 ## How to Use This Repo
 
 1. **Always start with `00-enumeration.md`.** Privilege escalation is fundamentally an enumeration problem — most of your time on a box should go into gathering information, not running exploits blind.
-2. Run through the enumeration checklist, then match whatever you find against the relevant file below.
+2. Not every engagement needs every file. Use the **scenario-based usage** section below to pick the relevant subset for the box in front of you, then fall back to the full trigger table if nothing in your scenario's subset pans out.
 3. Each file ends with a **Quick Checklist** — use these as a fast reference during live engagements once you already understand the underlying mechanism.
-4. Files are numbered roughly in the order you're likely to check them (easiest/most common first), not in order of difficulty.
 
 ---
 
-## File Index — What Each File Covers and When to Use It
+## Scenario-Based Usage — Which Files Actually Apply
+
+Real engagements don't need all 19 files. Use whichever bucket below matches the box you're on.
+
+### A. Web App Pentest — Landed a Low-Priv Shell (e.g. www-data)
+Priority order:
+```
+00 → 07 → 01 → 02 → 09 → 12
+```
+- `00` baseline, `07` capabilities and `01` SUID are fast wins worth checking before anything else
+- `02` sudo misconfig — web users occasionally get a lazy sudo rule
+- `09` credential hunting — web configs (`wp-config.php`, `.env`) are usually the richest source on this type of box
+- `12` passwd/shadow — check permissions since web server users sometimes run with loose umask-created files
+
+### B. Internal Network Pentest / Infrastructure Box
+Priority order:
+```
+00 → 11 → 10 → 13 → 09 → 03 → 15
+```
+- `11` NFS misconfiguration and `10` Docker/LXD group abuse are far more common on internal infra than on a public-facing web box
+- `13` SSH key abuse matters a lot here — internal boxes trust each other via keys
+- `03`/`15` cron and systemd timers — infra boxes are full of scheduled maintenance scripts
+
+### C. CTF / OSCP-Style Exam Box
+Use the full systematic sweep — these boxes are deliberately built to test breadth:
+```
+00 → 01 → 02 → 07 → 03 → 15 → 05 → 12 → 13 → 06 → 08 → 17 → 14 → 16 → 18 → 10 → 11 → 09 → 04
+```
+This is the complete suggested order further down in this README — run it top to bottom when you have no other context to narrow the search.
+
+### D. Modern / Recently-Patched Infrastructure (containers, systemd-based, current patch level)
+Older techniques are less likely to land here; focus on what's still realistically unpatched:
+```
+00 → 10 → 15 → 16 → 17 → 14
+```
+- `16` (PwnKit) and `18` (sudo pwfeedback) are worth a quick check regardless, since patching compliance lags even on modern stacks
+- `04` kernel exploits are usually a dead end here — skip unless nothing else works
+
+### E. Legacy / Old System (e.g. Metasploitable-style, very outdated patch level)
+```
+00 → 04 → 01 → 02 → 03 → 05 → 09
+```
+- Old boxes are where kernel exploits (`04`) actually pay off — don't skip it here the way you would on a modern target
+- Basic SUID/sudo/cron/permissions vectors are usually sufficient and often multiple are open simultaneously
+
+### F. "Nothing Obvious Works" — Deeper/Edge-Case Pass
+When the common vectors (SUID, sudo, cron, capabilities) are all clean:
+```
+06 → 08 → 17 → 14 → 11 → 10 → 18
+```
+These require more specific preconditions (writable PATH entries, retained env vars, missing libraries, wildcard-vulnerable scripts, NFS/container group membership, sudo edge-case bugs) — check them when the obvious stuff has already been ruled out.
+
+---
+
+## Full File Index — Every Technique and Its Trigger Condition
 
 | File | Technique | Use When You Find... |
 |------|-----------|----------------------|
@@ -39,7 +92,7 @@ A structured, mechanism-first reference for escalating privileges on Linux syste
 
 ---
 
-## Suggested Enumeration Order (Field Workflow)
+## Full Suggested Enumeration Order (No Scenario Context / CTF Default)
 
 ```
 1. 00-enumeration.md          → full baseline sweep (always first)
@@ -57,17 +110,6 @@ A structured, mechanism-first reference for escalating privileges on Linux syste
 
 ---
 
-## Conventions Used Across This Library
-
-- **Mechanism-first explanations** — every technique explains *why* it works before showing *how* to exploit it
-- **Flag-by-flag command breakdowns** — every non-trivial command includes a table or breakdown of what each argument does
-- **GTFOBins cross-references** — noted wherever a technique maps to a documented GTFOBins entry
-- **Quick Checklist** — every file ends with a condensed, copy-pasteable checklist for live use
-- **Blue Team notes** — each file includes detection/hardening guidance, not just offense
-- Full English only, consistent terminal-command style throughout
-
----
-
 ## Disclaimer
 
-This library is intended strictly for authorized penetration testing, CTF practice, and personal lab environments (e.g., Metasploitable 2, TryHackMe, HackTheBox). Do not use any technique here against systems you do not have explicit written authorization to test.
+This library is intended strictly for authorized penetration testing, CTF practice, and personal lab environments. Do not use any technique here against systems you do not have explicit written authorization to test.
