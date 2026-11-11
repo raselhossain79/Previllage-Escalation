@@ -26,6 +26,7 @@ privesc-notes/
 ├── README.md                          ← You are here (Start here)
 │
 ├── linux-privesc/
+│   ├── README.md                      ← Linux-specific guide (scenario-based usage, full index)
 │   ├── 00-enumeration.md
 │   ├── 01-suid-abuse.md
 │   ├── 02-sudo-misconfiguration.md
@@ -35,7 +36,16 @@ privesc-notes/
 │   ├── 06-path-hijacking.md
 │   ├── 07-capabilities.md
 │   ├── 08-environment-variables.md
-│   └── 09-credential-hunting.md
+│   ├── 09-credential-hunting.md
+│   ├── 10-docker-lxc-breakout.md
+│   ├── 11-nfs-misconfiguration.md
+│   ├── 12-passwd-shadow-abuse.md
+│   ├── 13-ssh-key-abuse.md
+│   ├── 14-wildcard-injection.md
+│   ├── 15-systemd-timer-service-abuse.md
+│   ├── 16-polkit-pkexec-exploitation.md
+│   ├── 17-shared-library-injection.md
+│   └── 18-sudo-token-tty-hijacking.md
 │
 └── windows-privesc/
     ├── 01-token-impersonation.md
@@ -47,31 +57,39 @@ privesc-notes/
 
 ## 🐧 Linux Privilege Escalation
 
-| # | Topic | 
+| # | Topic |
 |---|-------|
-| 00 | [Enumeration](linux-privesc/00-enumeration.md) | 
-| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) | 
-| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) | 
-| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) | 
-| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) | 
-| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) | 
-| 06 | [Path Hijacking](linux-privesc/06-path-hijacking.md) | 
-| 07 | [Capabilities](linux-privesc/07-capabilities.md) | 
-| 08 | [Environment Variables](linux-privesc/08-environment-variables.md) | 
-| 09 | [Credential Hunting](linux-privesc/09-credential-hunting.md) | 
+| 00 | [Enumeration](linux-privesc/00-enumeration.md) |
+| 01 | [SUID Abuse](linux-privesc/01-suid-abuse.md) |
+| 02 | [Sudo Misconfiguration](linux-privesc/02-sudo-misconfiguration.md) |
+| 03 | [Cron Job Abuse](linux-privesc/03-cron-job-abuse.md) |
+| 04 | [Kernel Exploit](linux-privesc/04-kernel-exploit.md) |
+| 05 | [Weak File Permissions](linux-privesc/05-weak-file-permissions.md) |
+| 06 | [Path Hijacking](linux-privesc/06-path-hijacking.md) |
+| 07 | [Capabilities](linux-privesc/07-capabilities.md) |
+| 08 | [Environment Variables](linux-privesc/08-environment-variables.md) |
+| 09 | [Credential Hunting](linux-privesc/09-credential-hunting.md) |
+| 10 | [Docker / LXC Breakout](linux-privesc/10-docker-lxc-breakout.md) |
+| 11 | [NFS Misconfiguration](linux-privesc/11-nfs-misconfiguration.md) |
+| 12 | [/etc/passwd & /etc/shadow Abuse](linux-privesc/12-passwd-shadow-abuse.md) |
+| 13 | [SSH Key Abuse](linux-privesc/13-ssh-key-abuse.md) |
+| 14 | [Wildcard Injection](linux-privesc/14-wildcard-injection.md) |
+| 15 | [Systemd Timer & Service Abuse](linux-privesc/15-systemd-timer-service-abuse.md) |
+| 16 | [Polkit / pkexec (PwnKit)](linux-privesc/16-polkit-pkexec-exploitation.md) |
+| 17 | [Shared Library Injection](linux-privesc/17-shared-library-injection.md) |
+| 18 | [Sudo Token / TTY Hijacking](linux-privesc/18-sudo-token-tty-hijacking.md) |
 
-
-
+> See `linux-privesc/README.md` for scenario-based usage (which files apply to web app pentests, internal network, CTF, legacy systems, etc.)
 
 ---
 
 ## 🪟 Windows Privilege Escalation
 
-| # | Topic | 
+| # | Topic |
 |---|-------|
-| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) | 
-| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) | 
-| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) | 
+| 01 | [Token Impersonation](windows-privesc/01-token-impersonation.md) |
+| 02 | [Unquoted Service Path](windows-privesc/02-unquoted-service-path.md) |
+| 03 | [AlwaysInstallElevated](windows-privesc/03-alwaysinstallelevated.md) |
 
 ---
 
@@ -81,32 +99,33 @@ Whenever you land on a system, run these commands **immediately** to understand 
 
 ### On Linux:
 ```bash
-id                          # Who am I? What groups am I in?
-whoami                      # Current username
-hostname                    # Machine name
-uname -a                    # Kernel version (important for kernel exploits)
-cat /etc/os-release         # OS version
-cat /etc/passwd             # All users on the system
-sudo -l                     # What can I run as sudo?
-find / -perm -u=s 2>/dev/null   # All SUID binaries
-cat /etc/crontab            # Scheduled jobs
+id                                   # Who am I? What groups am I in?
+whoami                               # Current username
+hostname                             # Machine name
+uname -a                             # Kernel version (important for kernel exploits)
+cat /etc/os-release                  # OS version
+sudo -l                              # What can I run as sudo? Also check for pwfeedback, env_keep
+find / -perm -u=s 2>/dev/null        # All SUID binaries
+getcap -r / 2>/dev/null              # Capabilities
+cat /etc/crontab                     # Scheduled jobs
+systemctl list-timers --all          # Systemd timers (modern cron replacement)
+cat /etc/exports 2>/dev/null         # NFS shares
+find / -name "id_rsa" 2>/dev/null    # SSH private keys
 ```
 
 ### On Windows:
 ```cmd
-whoami                      # Current user
-whoami /priv                # What privileges do I have?
-whoami /groups              # What groups am I in?
-systeminfo                  # OS version, patch level
-net users                   # All users
-net localgroup administrators   # Who is admin?
+whoami                              # Current user
+whoami /priv                        # What privileges do I have?
+whoami /groups                      # What groups am I in?
+systeminfo                          # OS version, patch level
+net users                           # All users
+net localgroup administrators       # Who is admin?
 ```
 
 ---
 
 ## 📌 Quick Reference — Automated Tools
-
-Instead of running all commands manually, these tools scan everything automatically:
 
 | Tool | OS | Usage |
 |------|----|-------|
@@ -131,25 +150,37 @@ chmod +x linpeas.sh
 ## Learning Order
 
 ```
-Start Here:
+Linux (start here):
+00 Enumeration                         → Always first
 01 SUID Abuse                          → Easiest, most common
 02 Sudo Misconfig                      → Very common in real world
-03 Cron Job Abuse                      → Medium difficulty
-04 Weak Permissions                    → Simple concept, quick win
-05 Kernel Exploit                      → You already saw this with udev
-06 Token Impersonation (Windows)       → Most important Windows technique
-07 Unquoted Service Path (Windows)
-08 AlwaysInstallElevated (Windows)
+07 Capabilities                        → Fast check, often overlooked
+03 Cron Job Abuse + 15 Systemd Timers  → Check both on every box
+05 Weak Permissions + 12 passwd/shadow → File permission vectors
+13 SSH Key Abuse                       → Especially on internal/infra boxes
+10 Docker / LXC Breakout               → If docker/lxd in groups
+11 NFS Misconfiguration                → If NFS ports open
+14 Wildcard Injection                  → Check alongside cron findings
+16 PwnKit / Polkit                     → Quick CVE check, worth always running
+17 Shared Library Injection            → Follow up on SUID binary ldd output
+18 Sudo Token / TTY Hijacking          → If pwfeedback in sudo -l output
+06 Path Hijacking + 08 Env Variables   → When common vectors exhausted
+09 Credential Hunting                  → Run in parallel throughout
+04 Kernel Exploit                      → Last resort
+
+Windows:
+06 Token Impersonation                 → Most important Windows technique
+07 Unquoted Service Path
+08 AlwaysInstallElevated
 ```
 
 ---
 
 ## 🗺️ What to Learn Next
 
-After completing these notes, the natural next steps are:
+After completing these notes:
 
 ### 1. Active Directory (AD) Attacks
-Real corporate networks run on Active Directory. This is where network pentesting gets serious.
 
 | Topic | What it covers |
 |-------|---------------|
@@ -165,7 +196,6 @@ Real corporate networks run on Active Directory. This is where network pentestin
 ---
 
 ### 2. Post-Exploitation
-After getting root/SYSTEM, a real pentester does more than just stop there.
 
 | Topic | What it covers |
 |-------|---------------|
@@ -179,21 +209,7 @@ After getting root/SYSTEM, a real pentester does more than just stop there.
 
 ---
 
-### 3. Advanced Linux Privilege Escalation
-These techniques go beyond the basics covered in this guide.
-
-| Topic | What it covers |
-|-------|---------------|
-| LD_PRELOAD Abuse | Inject malicious shared library via sudo environment variable |
-| NFS No_root_squash | Mount NFS share and plant SUID binary as root from attacker machine |
-| PATH Hijacking | Place malicious binary earlier in PATH than the real one |
-| Docker Group Abuse | Use Docker socket to mount host filesystem and escape to root |
-| Capabilities Abuse | Binaries with Linux capabilities (like cap_setuid) can be abused like SUID |
-
----
-
-### 4. Advanced Windows Privilege Escalation
-Deeper Windows techniques for OSCP and professional engagements.
+### 3. Advanced Windows Privilege Escalation
 
 | Topic | What it covers |
 |-------|---------------|
@@ -204,8 +220,7 @@ Deeper Windows techniques for OSCP and professional engagements.
 
 ---
 
-### 5. Web Application Privilege Escalation
-Since your primary goal is web app pentesting, these connect directly:
+### 4. Web Application Privilege Escalation
 
 | Topic | What it covers |
 |-------|---------------|
@@ -225,7 +240,7 @@ Post-Exploitation basics (credential dumping, lateral movement)
         ↓
 Active Directory attacks (Kerberoasting, BloodHound, Pass-the-Hash)
         ↓
-Advanced Linux priv esc (LD_PRELOAD, Docker, Capabilities)
+Advanced Windows priv esc (DLL hijacking, service abuse)
         ↓
 OSCP preparation (TryHackMe Pro labs / HackTheBox)
 ```
