@@ -110,6 +110,17 @@ These require more specific preconditions (writable PATH entries, retained env v
 
 ---
 
+## Conventions Used Across This Library
+
+- **Mechanism-first explanations** — every technique explains *why* it works before showing *how* to exploit it
+- **Flag-by-flag command breakdowns** — every non-trivial command includes a table or breakdown of what each argument does
+- **GTFOBins cross-references** — noted wherever a technique maps to a documented GTFOBins entry
+- **Quick Checklist** — every file ends with a condensed, copy-pasteable checklist for live use
+- **Blue Team notes** — each file includes detection/hardening guidance, not just offense
+- Full English only, consistent terminal-command style throughout
+
+---
+
 ## Disclaimer
 
-This library is intended strictly for authorized penetration testing, CTF practice, and personal lab environments. Do not use any technique here against systems you do not have explicit written authorization to test.
+This library is intended strictly for authorized penetration testing, CTF practice, and personal lab environments (e.g., Metasploitable 2, TryHackMe, HackTheBox). Do not use any technique here against systems you do not have explicit written authorization to test.
