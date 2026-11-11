@@ -29,7 +29,7 @@ uname -a
 - `uname` = print system information
 - `-a` = ALL info: kernel name, hostname, kernel release, kernel version, machine type, OS
 - Output example: `Linux ubuntu 5.4.0-74-generic #83-Ubuntu SMP Sat May 8 02:35:39 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux`
-- **Why important:** Kernel version is used to search for local kernel exploits (e.g., DirtyCow CVE-2016-5195, PwnKit CVE-2021-4034)
+- **Why important:** Kernel version is used to search for local kernel exploits (e.g., DirtyCow CVE-2016-5195, PwnKit CVE-2021-4034) — see `04-kernel-exploit.md`
 
 ```bash
 cat /etc/os-release
@@ -93,6 +93,7 @@ id
 - Example: `uid=1001(john) gid=1001(john) groups=1001(john),4(adm),24(cdrom),27(sudo),999(docker)`
 - **Why important:** If you see `docker`, `lxd`, `disk`, `sudo`, `adm` in groups → high chance of instant privesc
 - `uid=0` = you ARE root already
+- **Cross-reference:** `docker` or `lxd` in your groups → go straight to `10-docker-lxc-breakout.md`, no further confirmation needed
 
 ```bash
 groups
@@ -116,6 +117,9 @@ sudo -l
   - `(ALL) NOPASSWD: /usr/bin/find` = instant root
   - `(ALL) NOPASSWD: /usr/bin/python3` = instant root
   - `(ALL) NOPASSWD: /usr/bin/vim` = instant root
+- **Also check the `Matching Defaults entries` line in this same output for two things:**
+  - `env_keep` retaining `LD_PRELOAD` or `LD_LIBRARY_PATH` → see `08-environment-variables.md`
+  - `pwfeedback` listed as an enabled Default → see `18-sudo-token-tty-hijacking.md` (CVE-2019-18634, no sudo rule needed at all for this one)
 
 ```bash
 cat /etc/sudoers
@@ -149,6 +153,7 @@ cat /etc/passwd
 - UID 0 = root-level access
 - Shell `/sbin/nologin` or `/bin/false` = system account, can't login
 - **Why important:** Find users with UID 0 (backdoored root), find users with real shells (lateral movement targets)
+- **Cross-reference:** if this file (or `/etc/shadow`) turns out to be writable, the full exploitation playbook — including backup-file leaks and existing-user UID promotion — is in `12-passwd-shadow-abuse.md`
 
 ```bash
 awk -F: '($3 == "0") {print}' /etc/passwd
@@ -277,6 +282,7 @@ netstat -antup
 - `0.0.0.0:80` = listening on all interfaces, port 80 (public)
 - `127.0.0.1:8080` = listening on localhost only (internal service!)
 - **Why important:** Find services only accessible locally — internal web apps, databases, APIs that might have vulnerabilities or weaker auth
+- **Also check:** port `2049` (NFS) or `111` (portmapper) listening → see NFS Share Enumeration below and `11-nfs-misconfiguration.md`
 
 ```bash
 ss -tlnp
@@ -408,9 +414,31 @@ find / -perm /6000 -type f 2>/dev/null
 - `-` prefix = AND logic (all of these bits)
 - **Why important:** One command to find ALL elevated binaries
 
+### Follow-Up: Check Every SUID Binary's Library Dependencies
+
+```bash
+for f in $(find / -perm -4000 -type f 2>/dev/null); do
+  echo "=== $f ==="
+  ldd "$f" 2>/dev/null | grep "not found"
+done
+```
+**Breakdown:**
+- Loops through every SUID binary found above and runs `ldd` on each
+- `grep "not found"` = flags any binary with a missing shared library dependency
+- **Why important:** A SUID binary with a missing `.so` dependency can be hijacked via a planted library — full technique in `17-shared-library-injection.md`
+
+### Follow-Up: Check for pkexec
+
+```bash
+ls -la /usr/bin/pkexec
+```
+**Breakdown:**
+- `pkexec` is SUID-root by design — its presence alone isn't a vulnerability, but an unpatched version is a near-instant root path
+- **Why important:** See `16-polkit-pkexec-exploitation.md` (CVE-2021-4034 / PwnKit) — worth checking on every box, takes seconds
+
 ---
 
-## 7. Cron Jobs
+## 7. Cron Jobs & Systemd Timers
 
 ```bash
 cat /etc/crontab
@@ -421,6 +449,7 @@ cat /etc/crontab
 - `*` = any value (every minute/hour/etc)
 - `*/5` = every 5 units
 - **Why important:** Find commands run as root on a schedule. If the script is writable → add malicious code
+- **Also watch for:** an unquoted `*` wildcard inside the command targeting a directory you can write to → see `14-wildcard-injection.md`
 
 ```bash
 ls -la /etc/cron.d/
@@ -449,9 +478,67 @@ cat /var/spool/cron/crontabs/*
 - Each user has their own file named by username
 - **Why important:** See other users' scheduled tasks (needs read permission)
 
+### Systemd Timers (Modern Cron Replacement)
+
+Many current distros (Ubuntu 18.04+ especially) schedule tasks via systemd timers instead of, or alongside, cron. Always check both.
+
+```bash
+systemctl list-timers --all
+```
+**Breakdown:**
+- Lists every active and inactive timer unit, with NEXT run time and which `.service` it ACTIVATES
+- **Why important:** A box with an empty/minimal crontab can still have several root-run timers — don't assume "no cron = no scheduled task vector"
+
+```bash
+systemctl list-unit-files --type=timer
+```
+**Breakdown:**
+- Lists every timer unit file known to the system, including disabled ones
+- **Why important:** Broader net than `list-timers`, which only shows loaded/active ones
+
+**Cross-reference:** full exploitation of writable timer/service files and `ExecStart=` hijacking is in `15-systemd-timer-service-abuse.md`
+
 ---
 
-## 8. Automated Enumeration Tools
+## 8. SSH Keys & Container Group Membership
+
+### SSH Private Keys
+
+```bash
+find / -name "id_rsa" 2>/dev/null
+find / -name "id_ecdsa" 2>/dev/null
+find / -name "id_ed25519" 2>/dev/null
+find / -name "*.pem" 2>/dev/null
+ls -la /root/.ssh/ 2>/dev/null
+ls -la /home/*/.ssh/ 2>/dev/null
+```
+**Breakdown:**
+- Searches standard key filenames plus certificate/key files across common locations
+- **Why important:** A readable private key is a direct login path — no cracking needed if unencrypted. Full workflow (including passphrase cracking and `authorized_keys` injection) is in `13-ssh-key-abuse.md`
+
+### NFS Share Enumeration
+
+```bash
+cat /etc/exports 2>/dev/null
+showmount -e localhost 2>/dev/null
+```
+**Breakdown:**
+- `/etc/exports` = NFS server config, lists shared directories and their options
+- `showmount -e` = query exported shares from the NFS daemon directly
+- **Why important:** A share exported with `no_root_squash` is a direct root path — see `11-nfs-misconfiguration.md`. If this machine is the NFS *client* rather than server, run `showmount -e <server_ip>` against any NFS server found in `/etc/fstab` or mounted shares (`mount | grep nfs`)
+
+### Docker / LXD Group (Recap)
+
+Already flagged under Section 2 (`id`/`groups`), repeated here as a standalone enumeration step since it's easy to skim past in a long `id` output:
+
+```bash
+groups | grep -E 'docker|lxd'
+```
+**Why important:** Either group = effectively root. See `10-docker-lxc-breakout.md`.
+
+---
+
+## 9. Automated Enumeration Tools
 
 ### LinPEAS (Best Tool)
 
@@ -491,20 +578,26 @@ chmod +x pspy64
 ## Quick Checklist
 
 ```
-[ ] uname -a                         → kernel version
-[ ] cat /etc/os-release              → distro version
-[ ] id && groups                     → check privileged groups
-[ ] sudo -l                          → NOPASSWD sudo commands
-[ ] cat /etc/passwd                  → all users, UID 0 check
-[ ] ls -la /etc/shadow               → check if readable
-[ ] find / -perm -4000 2>/dev/null   → SUID binaries
-[ ] getcap -r / 2>/dev/null          → capabilities (next module)
-[ ] cat /etc/crontab                 → root cron jobs
-[ ] ls -la /etc/cron.*               → cron script permissions
-[ ] netstat -antup                   → internal-only services
-[ ] ps aux | grep root               → root processes
-[ ] env                              → environment variables
-[ ] find / -writable -type f 2>/dev/null → writable files
-[ ] ./linpeas.sh                     → automated full scan
-[ ] ./pspy64                         → watch live processes
+[ ] uname -a                              → kernel version              (04-kernel-exploit.md)
+[ ] cat /etc/os-release                   → distro version
+[ ] id && groups                          → check privileged groups     (10-docker-lxc-breakout.md if docker/lxd)
+[ ] sudo -l                               → NOPASSWD sudo commands, env_keep, pwfeedback
+                                             (02-sudo-misconfiguration.md / 08-environment-variables.md / 18-sudo-token-tty-hijacking.md)
+[ ] cat /etc/passwd                       → all users, UID 0 check      (12-passwd-shadow-abuse.md)
+[ ] ls -la /etc/shadow                    → check if readable
+[ ] find / -perm -4000 2>/dev/null        → SUID binaries               (01-suid-abuse.md)
+[ ] ldd each SUID binary | grep "not found" → missing libraries         (17-shared-library-injection.md)
+[ ] ls -la /usr/bin/pkexec                → polkit SUID check           (16-polkit-pkexec-exploitation.md)
+[ ] getcap -r / 2>/dev/null               → capabilities                (07-capabilities.md)
+[ ] cat /etc/crontab                      → root cron jobs              (03-cron-job-abuse.md / 14-wildcard-injection.md)
+[ ] ls -la /etc/cron.*                    → cron script permissions
+[ ] systemctl list-timers --all           → systemd timers              (15-systemd-timer-service-abuse.md)
+[ ] find / -name "id_rsa" etc. 2>/dev/null → SSH private keys           (13-ssh-key-abuse.md)
+[ ] cat /etc/exports / showmount -e       → NFS shares                  (11-nfs-misconfiguration.md)
+[ ] netstat -antup                        → internal-only services
+[ ] ps aux | grep root                    → root processes
+[ ] env                                   → environment variables       (08-environment-variables.md)
+[ ] find / -writable -type f 2>/dev/null  → writable files
+[ ] ./linpeas.sh                          → automated full scan
+[ ] ./pspy64                              → watch live processes
 ```
